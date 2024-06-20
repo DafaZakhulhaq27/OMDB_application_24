@@ -8,46 +8,60 @@ import {
   TouchableOpacity,
   SafeAreaView,
   StatusBar,
+  TextInput,
 } from "react-native";
+import useDebounce from "./hooks/debounce";
 
 export default function App() {
+  const [search, setSearch] = useState("star");
   const [movies, setMovies] = useState([]);
   const [loading, setLoading] = useState(true);
+  const debouncedSearch = useDebounce(search, 500);
 
   useEffect(() => {
-    fetch("http://www.omdbapi.com/?s=star&apikey=33312c01") // Replace 'your_api_key' with the actual key from OMDb API
+    setLoading(true);
+    fetch(`http://www.omdbapi.com/?s=${debouncedSearch}&apikey=33312c01`) // Replace 'your_api_key' with the actual key from OMDb API
       .then((response) => response.json())
       .then((data) => {
-        setMovies(data.Search);
-        setLoading(false);
+        setMovies(data.Search || []);
       })
       .catch((error) => {
         console.log(error, "err");
+      })
+      .finally(() => {
         setLoading(false);
       });
-  }, []);
+  }, [debouncedSearch]);
 
   const handlePress = (movie) => {
     // Navigate to details page with the selected movie
     alert(`Selected movie: ${movie.Title}`);
   };
 
-  if (loading) {
-    return <ActivityIndicator size="large" color="#0000ff" />;
-  }
-
   return (
     <SafeAreaView style={styles.container}>
       <Text style={styles.title}>Film Searcher</Text>
-      <ScrollView horizontal style={styles.scrollView}>
-        {movies.map((movie, index) => (
-          <TouchableOpacity key={index} onPress={() => handlePress(movie)}>
-            <View style={styles.movieContainer}>
-              <Text style={styles.movieTitle}>{movie.Title}</Text>
-            </View>
-          </TouchableOpacity>
-        ))}
-      </ScrollView>
+      <TextInput
+        style={styles.input}
+        onChangeText={setSearch}
+        placeholder="Search..."
+      />
+      {loading ? (
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color="#0000ff" />
+        </View>
+      ) : (
+        <ScrollView horizontal style={styles.scrollView}>
+          {movies.map((movie, index) => (
+            <TouchableOpacity key={index} onPress={() => handlePress(movie)}>
+              <View style={styles.movieContainer}>
+                <Text style={styles.movieTitle}>{movie.Title}</Text>
+              </View>
+            </TouchableOpacity>
+          ))}
+        </ScrollView>
+      )}
+
       <StatusBar backgroundColor="white" barStyle="dark-content" />
     </SafeAreaView>
   );
@@ -64,6 +78,9 @@ const styles = StyleSheet.create({
     fontSize: 24,
     fontWeight: "bold",
     marginBottom: 20,
+  },
+  loadingContainer: {
+    flex: 1,
   },
   scrollView: {
     width: "100%",
@@ -82,5 +99,13 @@ const styles = StyleSheet.create({
   movieTitle: {
     fontSize: 16,
     fontWeight: "bold",
+  },
+  input: {
+    height: 40,
+    margin: 12,
+    borderWidth: 1,
+    padding: 10,
+    width: 300,
+    maxWidth: "100%",
   },
 });
