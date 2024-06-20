@@ -17,6 +17,7 @@ export default function App() {
   const [movies, setMovies] = useState([]);
   const [loading, setLoading] = useState(true);
   const debouncedSearch = useDebounce(search, 500);
+  const [error, setError] = useState("");
 
   useEffect(() => {
     setLoading(true);
@@ -26,7 +27,7 @@ export default function App() {
         setMovies(data.Search || []);
       })
       .catch((error) => {
-        console.log(error, "err");
+        setError(JSON.stringify(error));
       })
       .finally(() => {
         setLoading(false);
@@ -37,6 +38,10 @@ export default function App() {
     // Navigate to details page with the selected movie
     alert(`Selected movie: ${movie.Title}`);
   };
+
+  if (error) {
+    return <SafeAreaView style={styles.container}>{error}</SafeAreaView>;
+  }
 
   return (
     <SafeAreaView style={styles.container}>
